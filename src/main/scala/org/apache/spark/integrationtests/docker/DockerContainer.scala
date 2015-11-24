@@ -47,6 +47,10 @@ class DockerContainer(val id: DockerId) {
       s"Timed out after $timeout waiting for container $name to be running")
   }
 
+  def copy(srcFile: String) = {
+    Docker.copyFile(this.id, srcFile)
+  }
+
   def isRunning = {
     (parse(s"docker inspect ${id.id}".!!) \ "State" \ "Running").extractOpt[Boolean].get
   }

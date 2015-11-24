@@ -17,7 +17,6 @@
 package org.apache.spark.integrationtests.docker.containers.mesos
 
 import java.io.File
-
 import org.apache.spark.integrationtests.docker.Docker
 import org.apache.spark.integrationtests.docker.containers.zookeeper.ZooKeeperMaster
 import org.json4s.JsonAST.JArray

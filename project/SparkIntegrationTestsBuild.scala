@@ -23,8 +23,8 @@ import sbt.Keys._
 object BuildSettings {
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := "org.apache.spark",
-    version := "0.1-SNAPSHOT",
-    scalaVersion := "2.10.4",
+    version := "0.1.6",
+    scalaVersion := "2.11.7",
     resolvers ++= Seq(
       Resolver.sonatypeRepo("snapshots"),
       Resolver.sonatypeRepo("releases"),
@@ -33,7 +33,9 @@ object BuildSettings {
     ),
     parallelExecution in Test := false,
     // This fork avoids "Native Library already loaded in another classloader" errors:
-    fork in Test := true
+    fork in Test := true,
+    publishTo := Some(Resolver.file("file",
+      new File(Path.userHome.absolutePath + "/.m2/repository")))
   )
 }
 
@@ -42,39 +44,21 @@ object SparkIntegrationTestsBuild extends Build {
 
   import BuildSettings._
 
-  val SPARK_HOME = Properties.envOrNone("SPARK_HOME").getOrElse {
-    "/Users/joshrosen/Documents/spark"
-    //throw new Exception("SPARK_HOME must be defined")
-  }
-
-  lazy val sparkCore = ProjectRef(
-    file(SPARK_HOME),
-    "core"
-  )
-
-
-  lazy val sparkStreaming = ProjectRef(
-    file(SPARK_HOME),
-    "streaming"
-  )
-
-  lazy val streamingKafka = ProjectRef(
-    file(SPARK_HOME),
-    "streaming-kafka"
-  )
-
   lazy val root = Project(
     "spark-integration-tests",
     file("."),
     settings = buildSettings ++ Seq(
+      javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint"),
       scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature"),
       libraryDependencies ++= Seq(
         "com.jsuereth" %% "scala-arm" % "1.4",
         "fr.janalyse"   %% "janalyse-ssh" % "0.9.14",
         "com.jcraft" % "jsch" % "0.1.51",
-        "org.scalatest" % "scalatest_2.10" % "2.2.1" % "test",
+        "org.apache.spark" %% "spark-core" % "1.5.2",
+        "org.apache.spark" %% "spark-streaming" % "1.5.2",
+        "org.scalatest" %% "scalatest" % "2.2.1" % "test",
         "net.sf.jopt-simple" % "jopt-simple" % "3.2" % "test"  // needed by Kafka, excluded by Spark
       )
     )
-  ).dependsOn(sparkCore, sparkStreaming, streamingKafka)
+  )// .dependsOn(sparkCore, sparkStreaming, streamingKafka)
 }

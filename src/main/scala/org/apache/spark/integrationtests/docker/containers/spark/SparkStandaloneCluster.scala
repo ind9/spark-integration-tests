@@ -23,8 +23,8 @@ import java.util.concurrent.TimeoutException
 import com.google.common.io.Files
 import org.apache.spark.integrationtests.docker.containers.zookeeper.ZooKeeperMaster
 import org.apache.spark.{Logging, SparkContext, SparkConf}
-import org.apache.spark.deploy.master.RecoveryState
-import org.apache.spark.integrationtests.docker.{Docker, DockerContainer}
+import org.apache.spark.integrationtests.utils.spark.RecoveryState
+import org.apache.spark.integrationtests.docker.{DockerContainer, Docker}
 import org.json4s.jackson.JsonMethods
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -56,7 +56,7 @@ abstract class SparkStandaloneBase(sparkEnv: Seq[(String, String)]) {
     new File(confDir, "spark-env.sh"), Charset.forName("UTF-8"))
 
   protected val mountDirs = Seq(
-    sparkHome -> "/opt/spark",
+  //  sparkHome -> "/opt/spark",
     confDir.getAbsolutePath -> "/opt/sparkconf")
 
   val container: DockerContainer
@@ -67,10 +67,12 @@ abstract class SparkStandaloneBase(sparkEnv: Seq[(String, String)]) {
     val start = System.currentTimeMillis()
     while ((System.currentTimeMillis() - start) < timeout.toMillis) {
       try {
-        Source.fromURL(s"http://${container.ip}:$webUIPort/json")
+        Source.fromURL(s"http://${container.ip}:$webUIPort/json/")
         return
       } catch {
         case ce: java.net.ConnectException =>
+          Thread.sleep(100)
+        case ce: java.net.SocketException =>
           Thread.sleep(100)
       }
     }
@@ -83,9 +85,12 @@ abstract class SparkStandaloneBase(sparkEnv: Seq[(String, String)]) {
 }
 
 
-class SparkMaster(sparkEnv: Seq[(String, String)]) extends SparkStandaloneBase(sparkEnv) {
+class SparkMaster(sparkEnv: Seq[(String, String)],
+                  extraMountDirs: Seq[(String, String)])
+  extends SparkStandaloneBase(sparkEnv) {
 
-  val container = Docker.launchContainer("spark-test-master", mountDirs = mountDirs)
+  val container = Docker.launchContainer("spark-test-master",
+      mountDirs = mountDirs ++ extraMountDirs)
 
   def masterUrl: String = s"spark://${container.ip}:7077"
 
@@ -97,7 +102,7 @@ class SparkMaster(sparkEnv: Seq[(String, String)]) extends SparkStandaloneBase(s
   def getState: SparkMasterState = {
     implicit val formats = org.json4s.DefaultFormats
     val json =
-      JsonMethods.parse(Source.fromURL(s"http://${container.ip}:8080/json").bufferedReader())
+      JsonMethods.parse(Source.fromURL(s"http://${container.ip}:8080/json/").bufferedReader())
 
     val state = {
       val status = json \\ "status"
@@ -124,10 +129,11 @@ class SparkMaster(sparkEnv: Seq[(String, String)]) extends SparkStandaloneBase(s
 
 
 class SparkWorker(sparkEnv: Seq[(String, String)],
-                  masterUrl: String) extends SparkStandaloneBase(sparkEnv) {
+                  masterUrl: String,
+                  extraMountDirs: Seq[(String, String)]) extends SparkStandaloneBase(sparkEnv) {
 
   val container = Docker.launchContainer("spark-test-worker",
-    args = masterUrl, mountDirs = mountDirs)
+    args = masterUrl, mountDirs = mountDirs ++ extraMountDirs)
 
   // TODO: the default changed across Spark versions, AFAIK; detect this programatically
   // (or configure it ourselves when launching the worker...)
@@ -144,18 +150,18 @@ class SparkStandaloneCluster(baseEnv: Seq[(String, String)]) extends Logging {
     baseEnv
   }
 
-  def addWorkers(num: Int){
+  def addWorkers(num: Int, extraMountDirs: Seq[(String, String)]){
     logInfo(s">>>>> ADD WORKERS $num <<<<<")
     val masterUrl = getMasterUrl()
-    (1 to num).foreach { _ => workers += new SparkWorker(getSparkEnv, masterUrl) }
-    workers.foreach(_.waitForUI(10 seconds))
+    (1 to num).foreach { _ => workers += new SparkWorker(getSparkEnv, masterUrl, extraMountDirs) }
+    workers.foreach(_.waitForUI(30 seconds))
   }
 
 
-  def addMasters(num: Int) {
+  def addMasters(num: Int = 1, extraMountDirs: Seq[(String, String)]) {
     logInfo(s">>>>> ADD MASTERS $num <<<<<")
-    (1 to num).foreach { _ => masters += new SparkMaster(getSparkEnv) }
-    masters.foreach(_.waitForUI(10 seconds))
+    (1 to num).foreach { _ => masters += new SparkMaster(getSparkEnv, extraMountDirs) }
+    masters.foreach(_.waitForUI(30 seconds))
   }
 
   def createSparkContext(conf: SparkConf, name: String ="spark-integration-tests"): SparkContext = {
@@ -221,10 +227,12 @@ class ZooKeeperHASparkStandaloneCluster(baseEnv: Seq[(String, String)], zookeepe
 
 object SparkClusters {
   def createStandaloneCluster(baseEnv: Seq[(String, String)],
-                              numWorkers: Int): SparkStandaloneCluster = {
+                              numWorkers: Int,
+                              extraMountDirs: Seq[(String, String)] = Seq.empty
+                             ): SparkStandaloneCluster = {
     val cluster = new SparkStandaloneCluster(baseEnv)
-    cluster.addMasters(1)
-    cluster.addWorkers(numWorkers)
+    cluster.addMasters(1, extraMountDirs)
+    cluster.addWorkers(numWorkers, extraMountDirs)
     cluster
   }
 }

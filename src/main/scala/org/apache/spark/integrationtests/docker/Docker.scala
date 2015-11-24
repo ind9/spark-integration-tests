@@ -52,7 +52,7 @@ object Docker extends Logging {
     val mountCmd = mountDirs.map{ case (s, t) => s"-v $s:$t" }.mkString(" ")
 
     val dockerLaunchCommand = s"docker run --privileged -d $mountCmd $dockerArgs $imageTag $args"
-    logDebug(s"Docker launch command is $dockerLaunchCommand")
+    logInfo(s"Docker launch command is $dockerLaunchCommand")
     val id = new DockerId(dockerLaunchCommand.!!.trim)
     registerContainer(id)
     try {
@@ -78,6 +78,10 @@ object Docker extends Logging {
   def getHostSSHConnection: SSH = {
     val key = "id_boot2docker"
     SSH(SSHOptions(host = "localhost", username =  "docker", port = 2022, sshKeyFile = Some(key)))
+  }
+
+  def copyFile(dockerId: DockerId, src: String) = {
+    s"docker cp ${src} ${dockerId.id}:/".!
   }
 }
 

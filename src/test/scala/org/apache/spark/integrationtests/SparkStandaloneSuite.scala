@@ -29,7 +29,7 @@ class SparkStandaloneSuite extends FunSuite
   with Matchers
   with Logging
   with DockerFixture
-  with NetworkFaultInjectorFixture
+ // with NetworkFaultInjectorFixture
   with SparkClusterFixture[SparkStandaloneCluster]
   with SparkContextFixture {
 
@@ -51,18 +51,18 @@ class SparkStandaloneSuite extends FunSuite
     }
     logInfo("Cluster launched with one worker")
 
-    networkFaultInjector.dropTraffic(master.container, worker.container)
-    networkFaultInjector.dropTraffic(worker.container, master.container)
-    eventually(timeout(30 seconds), interval(1 seconds)) {
-      master.getState.liveWorkerIPs.size should be (0)
-    }
-    Thread.sleep(10000)
-    logInfo("Master shows that zero workers are registered after network connection fails")
-
-    networkFaultInjector.restore()
-    eventually(timeout(30 seconds), interval(1 seconds)) {
-      master.getState.liveWorkerIPs.size should be (1)
-    }
-    logInfo("Master shows one worker after network connection is restored")
+//    //networkFaultInjector.dropTraffic(master.container, worker.container)
+//    //networkFaultInjector.dropTraffic(worker.container, master.container)
+//    eventually(timeout(30 seconds), interval(1 seconds)) {
+//      master.getState.liveWorkerIPs.size should be (0)
+//    }
+//    Thread.sleep(10000)
+//    logInfo("Master shows that zero workers are registered after network connection fails")
+//
+//    networkFaultInjector.restore()
+//    eventually(timeout(30 seconds), interval(1 seconds)) {
+//      master.getState.liveWorkerIPs.size should be (1)
+//    }
+//    logInfo("Master shows one worker after network connection is restored")
   }
 }

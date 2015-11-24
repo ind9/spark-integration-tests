@@ -19,10 +19,11 @@ package org.apache.spark.integrationtests
 import java.io.File
 import java.util.concurrent.Semaphore
 
+
+import org.apache.spark.integrationtests.docker.containers.zookeeper.ZooKeeperMaster
 import org.apache.spark.scheduler.{SparkListenerTaskStart, SparkListener}
 import org.apache.spark.{SparkException, SparkConf, SparkContext, Logging}
-import org.apache.spark.integrationtests.docker.containers.mesos.{MesosSlave, MesosMaster}
-import org.apache.spark.integrationtests.docker.containers.zookeeper.ZooKeeperMaster
+import org.apache.spark.integrationtests.docker.containers.mesos.{MesosMaster, MesosSlave}
 import org.apache.spark.integrationtests.fixtures.{ZooKeeperFixture, SparkContextFixture, DockerFixture}
 import org.scalatest.concurrent.Eventually._
 import org.scalatest.{BeforeAndAfterEach, Matchers, FunSuite}
@@ -104,7 +105,7 @@ class MesosSuite extends FunSuite
     })
 
     val f = sc.parallelize(1 to 10000, 2).map { i => Thread.sleep(10); i }.countAsync()
-    future {
+    Future {
       // Wait until some tasks were launched before we cancel the job.
       sem.acquire()
       f.cancel()

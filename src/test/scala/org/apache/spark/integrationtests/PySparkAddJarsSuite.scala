@@ -19,6 +19,8 @@ package org.apache.spark.integrationtests
 import java.io.File
 import java.nio.charset.Charset
 
+import org.apache.spark.integrationtests.utils.spark.ProcessUtils
+
 import scala.language.postfixOps
 
 import com.google.common.io.Files
@@ -26,7 +28,6 @@ import org.scalatest.{FunSuite, Matchers}
 
 import org.apache.spark.integrationtests.fixtures.SparkContextFixture
 import org.apache.spark.Logging
-import org.apache.spark.integrationtests.utils.spark.ProcessUtils
 
 
 /**
