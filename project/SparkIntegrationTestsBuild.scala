@@ -34,8 +34,19 @@ object BuildSettings {
     parallelExecution in Test := false,
     // This fork avoids "Native Library already loaded in another classloader" errors:
     fork in Test := true,
-    publishTo := Some(Resolver.file("file",
-      new File(Path.userHome.absolutePath + "/.m2/repository")))
+    // disable publishing test jars
+    publishArtifact in Test := false,
+
+    // publishing the main docs jar
+    publishArtifact in (Compile, packageDoc) := false,
+
+    // publishing the main sources jar
+    publishArtifact in (Compile, packageSrc) := true,
+
+    publishTo :=
+      Some("Indix Release Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-release-local"),
+  
+    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
   )
 }
 
