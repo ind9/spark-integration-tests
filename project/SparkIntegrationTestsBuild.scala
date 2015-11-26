@@ -23,7 +23,7 @@ import sbt.Keys._
 object BuildSettings {
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := "org.apache.spark",
-    version := "0.1.6",
+    version := "0.1.7",
     scalaVersion := "2.11.7",
     resolvers ++= Seq(
       Resolver.sonatypeRepo("snapshots"),
@@ -45,7 +45,7 @@ object BuildSettings {
 
     publishTo :=
       Some("Indix Release Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-release-local"),
-  
+
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
   )
 }

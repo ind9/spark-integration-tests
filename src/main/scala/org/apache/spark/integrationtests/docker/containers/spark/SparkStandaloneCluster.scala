@@ -89,7 +89,7 @@ class SparkMaster(sparkEnv: Seq[(String, String)],
                   extraMountDirs: Seq[(String, String)])
   extends SparkStandaloneBase(sparkEnv) {
 
-  val container = Docker.launchContainer("spark-test-master",
+  val container = Docker.launchContainer("tamizhgeek/spark-test-master",
       mountDirs = mountDirs ++ extraMountDirs)
 
   def masterUrl: String = s"spark://${container.ip}:7077"
@@ -132,7 +132,7 @@ class SparkWorker(sparkEnv: Seq[(String, String)],
                   masterUrl: String,
                   extraMountDirs: Seq[(String, String)]) extends SparkStandaloneBase(sparkEnv) {
 
-  val container = Docker.launchContainer("spark-test-worker",
+  val container = Docker.launchContainer("tamizhgeek/spark-test-worker",
     args = masterUrl, mountDirs = mountDirs ++ extraMountDirs)
 
   // TODO: the default changed across Spark versions, AFAIK; detect this programatically
